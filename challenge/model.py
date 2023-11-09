@@ -1,19 +1,52 @@
 import pandas as pd
+import numpy as np
+from datetime import datetime
 
 from typing import Tuple, Union, List
+from sklearn.linear_model import LogisticRegression
+
 
 class DelayModel:
 
     def __init__(
         self
     ):
-        self._model = None # Model should be saved in this attribute.
+        # model config
+        self.class_weight = {1: 0.8161845157337302, 0: 0.18381548426626987}
+        self._model = LogisticRegression(class_weight=self.class_weight)
+        self._model.coef_ = np.array([[
+            1.11179859,
+            0.79358501,
+            0.50121651,
+            0.063798,
+            0.61961298,
+            0.59363468,
+            -0.30059333,
+            0.30639762,
+            0.19189159,
+            -1.46293121
+        ]])
+        self._model.intercept_ = np.array([[-0.58720526]])
+        self._model.classes_ = np.array([[0, 1]])
+
+        self.top_10_features = [
+            "OPERA_Latin American Wings",
+            "MES_7",
+            "MES_10",
+            "OPERA_Grupo LATAM",
+            "MES_12",
+            "TIPOVUELO_I",
+            "MES_4",
+            "MES_11",
+            "OPERA_Sky Airline",
+            "OPERA_Copa Air"
+        ]
 
     def preprocess(
         self,
         data: pd.DataFrame,
         target_column: str = None
-    ) -> Union(Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame):
+    ) -> Union[Tuple[pd.DataFrame, pd.DataFrame], pd.DataFrame]:
         """
         Prepare raw data for training or predict.
 
@@ -26,7 +59,24 @@ class DelayModel:
             or
             pd.DataFrame: features.
         """
-        return
+
+        #
+
+        data['delay'] = self._create_targe_column(data)
+
+        features = pd.concat([
+            pd.get_dummies(data['OPERA'], prefix='OPERA'),
+            pd.get_dummies(data['TIPOVUELO'], prefix='TIPOVUELO'),
+            pd.get_dummies(data['MES'], prefix='MES')],
+            axis=1
+        )
+
+        features = features[self.top_10_features]
+
+        if target_column:
+            target = pd.DataFrame(data[target_column])
+            return features, target
+        return features
 
     def fit(
         self,
@@ -40,7 +90,7 @@ class DelayModel:
             features (pd.DataFrame): preprocessed data.
             target (pd.DataFrame): target.
         """
-        return
+        self._model.fit(features, target)
 
     def predict(
         self,
@@ -55,4 +105,17 @@ class DelayModel:
         Returns:
             (List[int]): predicted targets.
         """
-        return
+        return [pred.item() for pred in self._model.predict(features)]
+
+    @staticmethod
+    def _create_targe_column(data: pd.DataFrame):
+        def get_min_diff(df):
+            fecha_o = datetime.strptime(df['Fecha-O'], '%Y-%m-%d %H:%M:%S')
+            fecha_i = datetime.strptime(df['Fecha-I'], '%Y-%m-%d %H:%M:%S')
+            return ((fecha_o - fecha_i).total_seconds())/60
+
+        threshold_in_minutes = 15
+        min_diff = data.apply(get_min_diff, axis=1)
+        return np.where(min_diff > threshold_in_minutes, 1, 0)
+
+
