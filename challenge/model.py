@@ -12,18 +12,6 @@ class DelayModel:
         self
     ):
         # model config
-        self._model_features = [
-            "OPERA_Latin American Wings",
-            "MES_7",
-            "MES_10",
-            "OPERA_Grupo LATAM",
-            "MES_12",
-            "TIPOVUELO_I",
-            "MES_4",
-            "MES_11",
-            "OPERA_Sky Airline",
-            "OPERA_Copa Air"
-        ]
         class_weight = {1: 0.8161845157337302, 0: 0.18381548426626987}
         self._model = LogisticRegression(class_weight=class_weight)
         self._model.coef_ = np.array([[
@@ -59,25 +47,10 @@ class DelayModel:
             pd.DataFrame: features.
         """
 
-        #
-        opera_categories = pd.CategoricalDtype(
-            [
-                "Latin American Wings",
-                "Grupo LATAM",
-                "Sky Airline",
-                "Copa Air"
-            ]
-        )
+        # Model features
+        opera_categories = pd.CategoricalDtype(["Latin American Wings", "Grupo LATAM", "Sky Airline", "Copa Air"])
         tipo_vuelo_categories = pd.CategoricalDtype(["I"])
-        mes_categories = pd.CategoricalDtype(
-            [
-                "7",
-                "10",
-                "12",
-                "4",
-                "11",
-            ]
-        )
+        mes_categories = pd.CategoricalDtype([4, 7, 10, 11, 12])
 
         features = pd.concat([
             pd.get_dummies(
@@ -94,8 +67,6 @@ class DelayModel:
             )],
             axis=1
         )
-
-        features = features[self._model_features]
 
         if target_column:
             data[target_column] = self._create_target_column(data)

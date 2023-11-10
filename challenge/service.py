@@ -16,10 +16,10 @@ class DelayService:
             "TIPOVUELO": [],
             "MES": []
         }
-        for sample in data:
-            features["OPERA"].append(sample.OPERA)
-            features["TIPOVUELO"].append(sample.TIPOVUELO)
-            features["MES"].append(sample.MES)
+        for flight in data:
+            features["OPERA"].append(flight.OPERA)
+            features["TIPOVUELO"].append(flight.TIPOVUELO)
+            features["MES"].append(flight.MES)
 
         features = pd.DataFrame(features)
         features = self._model.preprocess(features)

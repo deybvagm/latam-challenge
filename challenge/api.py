@@ -1,10 +1,11 @@
 from typing import List
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
 from pydantic import BaseModel
 
 from challenge.factory import delay_service_factory
+from challenge.service import DelayService
 from challenge.types import Flight
 
 
@@ -31,6 +32,9 @@ async def get_health() -> dict:
 
 
 @app.post("/predict", status_code=200)
-async def post_predict(req: PredictionReq) -> dict:
-    service = delay_service_factory()
-    return service.predict(req.flights)
+async def post_predict(
+        req: PredictionReq,
+        service: DelayService = Depends(delay_service_factory)
+) -> dict:
+    preds = service.predict(req.flights)
+    return {"predict": preds}
