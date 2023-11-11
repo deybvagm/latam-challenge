@@ -12,8 +12,8 @@ class DelayModel:
         self
     ):
         # model config
-        self.class_weight = {1: 0.8161845157337302, 0: 0.18381548426626987}
-        self._model = LogisticRegression(class_weight=self.class_weight)
+        class_weight = {1: 0.8161845157337302, 0: 0.18381548426626987}
+        self._model = LogisticRegression(class_weight=class_weight)
         self._model.coef_ = np.array([[
             1.11179859,
             0.79358501,
@@ -28,19 +28,6 @@ class DelayModel:
         ]])
         self._model.intercept_ = np.array([[-0.58720526]])
         self._model.classes_ = np.array([[0, 1]])
-
-        self.top_10_features = [
-            "OPERA_Latin American Wings",
-            "MES_7",
-            "MES_10",
-            "OPERA_Grupo LATAM",
-            "MES_12",
-            "TIPOVUELO_I",
-            "MES_4",
-            "MES_11",
-            "OPERA_Sky Airline",
-            "OPERA_Copa Air"
-        ]
 
     def preprocess(
         self,
@@ -60,20 +47,29 @@ class DelayModel:
             pd.DataFrame: features.
         """
 
-        #
-
-        data['delay'] = self._create_targe_column(data)
+        # Model features
+        opera_categories = pd.CategoricalDtype(["Latin American Wings", "Grupo LATAM", "Sky Airline", "Copa Air"])
+        tipo_vuelo_categories = pd.CategoricalDtype(["I"])
+        mes_categories = pd.CategoricalDtype([4, 7, 10, 11, 12])
 
         features = pd.concat([
-            pd.get_dummies(data['OPERA'], prefix='OPERA'),
-            pd.get_dummies(data['TIPOVUELO'], prefix='TIPOVUELO'),
-            pd.get_dummies(data['MES'], prefix='MES')],
+            pd.get_dummies(
+                pd.Series(data['OPERA'], dtype=opera_categories),
+                prefix='OPERA'
+            ),
+            pd.get_dummies(
+                pd.Series(data['TIPOVUELO'], dtype=tipo_vuelo_categories),
+                prefix='TIPOVUELO'
+            ),
+            pd.get_dummies(
+                pd.Series(data['MES'], dtype=mes_categories),
+                prefix='MES'
+            )],
             axis=1
         )
 
-        features = features[self.top_10_features]
-
         if target_column:
+            data[target_column] = self._create_target_column(data)
             target = pd.DataFrame(data[target_column])
             return features, target
         return features
@@ -108,7 +104,7 @@ class DelayModel:
         return [pred.item() for pred in self._model.predict(features)]
 
     @staticmethod
-    def _create_targe_column(data: pd.DataFrame):
+    def _create_target_column(data: pd.DataFrame):
         def get_min_diff(df):
             fecha_o = datetime.strptime(df['Fecha-O'], '%Y-%m-%d %H:%M:%S')
             fecha_i = datetime.strptime(df['Fecha-I'], '%Y-%m-%d %H:%M:%S')
