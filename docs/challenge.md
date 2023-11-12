@@ -14,3 +14,22 @@ The model to operationalize is the one in the experiment `6.b.iii` (Logistic Reg
        [1313, 2901]]`
   * Confusion matrix for Logistic Regression `[[9487, 8807],
        [1314, 2900]]`
+
+
+## Part II: API for predictions
+
+To be able to make predictions on the trained model, this approach is followed:
+- The relevant model configuration like model parameters (weights) and class balance info are saved in order to be able to create an instance of the LogistRegression model without having to retrain the model again. You can see the implementation in `Model.__init_()__`
+- For the preprocessing step, there is no need to process the whole Dataframe and therefore only the data related to most relevant features is retained. This also includes the creation of the target variable in case of preprocessing a Dataframe for training
+- A new `service` layer  is added between the API and the model to avoid coupling the API to a specif model.
+
+## Part III
+- The API is deployed in the AWS cloud.
+- A Dockerfile is added to containerize the application
+
+
+## Part IV
+For the CD process, a configuration that uses AWS cloud resources is defined. The main cloud resources used are:
+- AWS ECS to manage the instances
+- AWS ECR to manage the docker image
+- Terraform is used to streamline the cloud infrastructure. You can see the conf under the `ECS`.
